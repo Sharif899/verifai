@@ -1,8 +1,0 @@
-{
-  "name": "og-verifiable-chatbot",
-  "version": "1.0.0",
-  "description": "Verifiable AI Chatbot powered by OpenGradient TEE-verified LLM inference",
-  "dependencies": {
-    "ethers": "^6.9.0"
-  }
-}
