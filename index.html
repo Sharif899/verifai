@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VerifAI — Verifiable AI Chat powered by OpenGradient</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #09090b;
+  --surface:   #0e0e11;
+  --card:      #131316;
+  --border:    #1e1e24;
+  --border2:   #2a2a33;
+  --text:      #e4e4e7;
+  --muted:     #52525b;
+  --dim:       #27272a;
+  --green:     #22c55e;
+  --green-dim: #052e16;
+  --blue:      #3b82f6;
+  --blue-dim:  #0a1628;
+  --amber:     #f59e0b;
+  --amber-dim: #1c1407;
+  --red:       #ef4444;
+  --mono:      'Geist Mono', monospace;
+  --sans:      'Geist', sans-serif;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ── Nav ── */
+nav {
+  height: 52px; flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 20px;
+  justify-content: space-between;
+  z-index: 10;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.brand-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: var(--green); display: flex;
+  align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px;
+  font-weight: 500; color: #000; letter-spacing: -0.5px;
+}
+.brand-name {
+  font-size: 14px; font-weight: 600; letter-spacing: -0.3px;
+}
+.brand-tag {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  background: var(--dim); padding: 2px 7px; border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-model-select {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border2); border-radius: 5px;
+  padding: 5px 10px; outline: none; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+}
+.nav-model-select:focus { border-color: var(--green); }
+.tee-badge {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--green); letter-spacing: 0.5px;
+}
+.tee-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.nav-link {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  text-decoration: none; transition: color 0.15s;
+}
+.nav-link:hover { color: var(--text); }
+
+/* ── Main layout ── */
+.main {
+  flex: 1; display: flex;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+@media(max-width:768px) { .sidebar { display: none; } }
+
+.sidebar-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-title {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+.new-chat-btn {
+  width: 100%; padding: 8px;
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  background: var(--green); color: #000; border: none;
+  border-radius: 5px; cursor: pointer; transition: opacity 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.new-chat-btn:hover { opacity: 0.88; }
+
+.proof-log {
+  flex: 1; overflow-y: auto; padding: 10px;
+}
+.proof-log::-webkit-scrollbar { width: 3px; }
+.proof-log::-webkit-scrollbar-track { background: transparent; }
+.proof-log::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.proof-item {
+  padding: 10px; border-radius: 6px; margin-bottom: 6px;
+  border: 1px solid var(--border); background: var(--card);
+  cursor: pointer; transition: border-color 0.15s;
+}
+.proof-item:hover { border-color: var(--border2); }
+.proof-item-model {
+  font-family: var(--mono); font-size: 10px; color: var(--green);
+  margin-bottom: 3px; letter-spacing: 0.3px;
+}
+.proof-item-preview {
+  font-size: 11px; color: var(--muted); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.proof-item-hash {
+  font-family: var(--mono); font-size: 9px; color: var(--muted);
+  margin-top: 5px; letter-spacing: 0.3px;
+}
+
+.sidebar-footer {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+}
+.proof-counter {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.proof-count { color: var(--green); font-size: 13px; font-weight: 500; }
+
+/* ── Chat area ── */
+.chat-area {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 20px; text-align: center;
+}
+.empty-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: var(--green); display: flex;
+  align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 20px; font-weight: 500;
+  color: #000; margin-bottom: 20px;
+}
+.empty-title {
+  font-size: 22px; font-weight: 600; letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+.empty-sub {
+  font-size: 14px; color: var(--muted); max-width: 380px;
+  line-height: 1.6; margin-bottom: 32px;
+}
+.starter-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  max-width: 480px; width: 100%;
+}
+@media(max-width:500px) { .starter-grid { grid-template-columns: 1fr; } }
+.starter-btn {
+  padding: 12px 14px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 8px;
+  font-size: 12px; color: var(--text); text-align: left;
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  line-height: 1.4;
+}
+.starter-btn:hover { border-color: var(--green); background: var(--surface); }
+.starter-label {
+  font-family: var(--mono); font-size: 9px; color: var(--green);
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;
+}
+
+/* ── Messages ── */
+.messages {
+  flex: 1; overflow-y: auto; padding: 20px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.messages::-webkit-scrollbar { width: 3px; }
+.messages::-webkit-scrollbar-track { background: transparent; }
+.messages::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.message { display: flex; gap: 12px; max-width: 780px; }
+.message.user { flex-direction: row-reverse; margin-left: auto; }
+
+.msg-avatar {
+  width: 28px; height: 28px; border-radius: 6px;
+  flex-shrink: 0; display: flex; align-items: center;
+  justify-content: center; font-family: var(--mono); font-size: 10px;
+  font-weight: 500;
+}
+.msg-avatar.user { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+.msg-avatar.ai   { background: var(--green); color: #000; }
+
+.msg-body { flex: 1; min-width: 0; }
+.message.user .msg-body { display: flex; flex-direction: column; align-items: flex-end; }
+
+.msg-bubble {
+  padding: 12px 16px; border-radius: 10px;
+  font-size: 14px; line-height: 1.65;
+  max-width: 100%;
+}
+.message.user .msg-bubble {
+  background: var(--blue-dim); border: 1px solid rgba(59,130,246,0.2);
+  color: var(--text); border-radius: 10px 2px 10px 10px;
+}
+.message.ai .msg-bubble {
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--text); border-radius: 2px 10px 10px 10px;
+}
+
+/* Proof tag below AI message */
+.proof-tag {
+  margin-top: 6px; display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+}
+.proof-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.3px;
+  padding: 3px 8px; border-radius: 4px; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.proof-chip:hover { opacity: 0.75; }
+.proof-chip.tee   { color: var(--green); background: var(--green-dim); border: 1px solid rgba(34,197,94,0.2); }
+.proof-chip.model { color: var(--muted); background: var(--dim);       border: 1px solid var(--border); }
+.proof-chip.hash  { color: var(--blue);  background: var(--blue-dim);  border: 1px solid rgba(59,130,246,0.2); }
+.proof-chip.tokens{ color: var(--muted); background: var(--dim);       border: 1px solid var(--border); }
+
+/* Typing indicator */
+.typing-indicator {
+  display: flex; gap: 4px; padding: 14px 16px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 2px 10px 10px 10px; width: fit-content;
+}
+.typing-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
+  animation: typingBounce 1.2s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+  0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+  30%          { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ── Input area ── */
+.input-area {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.input-wrapper {
+  display: flex; gap: 10px; align-items: flex-end;
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 10px 12px;
+  transition: border-color 0.15s;
+  max-width: 780px; margin: 0 auto;
+}
+.input-wrapper:focus-within { border-color: var(--green); }
+
+.msg-textarea {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: var(--sans); font-size: 14px; color: var(--text);
+  resize: none; line-height: 1.5; max-height: 160px;
+  scrollbar-width: none;
+}
+.msg-textarea::placeholder { color: var(--muted); }
+.msg-textarea::-webkit-scrollbar { display: none; }
+
+.send-btn {
+  width: 34px; height: 34px; border-radius: 7px;
+  background: var(--green); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.15s, transform 0.1s; flex-shrink: 0;
+}
+.send-btn:hover  { opacity: 0.88; }
+.send-btn:active { transform: scale(0.95); }
+.send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+.send-btn svg { width: 16px; height: 16px; fill: #000; }
+
+.input-footer {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; margin-top: 8px; max-width: 780px; margin: 8px auto 0;
+}
+.input-footer-text {
+  font-family: var(--mono); font-size: 9px; color: var(--muted);
+  letter-spacing: 0.5px;
+  display: flex; align-items: center; gap: 4px;
+}
+.verified-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 4px var(--green);
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-brand">
+    <div class="brand-icon">OG</div>
+    <span class="brand-name">VerifAI</span>
+    <span class="brand-tag">TEE-VERIFIED</span>
+  </div>
+  <div class="nav-right">
+    <select class="nav-model-select" id="modelSelect">
+      <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
+      <option value="anthropic/claude-haiku-4-5">Claude Haiku 4.5</option>
+      <option value="openai/gpt-4.1-2025-04-14">GPT-4.1</option>
+      <option value="openai/gpt-5-mini">GPT-5 Mini</option>
+      <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+    </select>
+    <div class="tee-badge"><div class="tee-dot"></div>TEE ACTIVE</div>
+    <a class="nav-link" href="https://explorer.opengradient.ai" target="_blank">Explorer ↗</a>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Sidebar: proof log -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">// Proof Log</div>
+      <button class="new-chat-btn" onclick="newChat()">
+        + New Verified Chat
+      </button>
+    </div>
+    <div class="proof-log" id="proofLog">
+      <div style="padding:20px 10px;text-align:center">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
+          Every AI response will appear here with its on-chain proof.
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="proof-counter">
+        <span>Verified responses</span>
+        <span class="proof-count" id="proofCount">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-area" id="chatArea">
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">OG</div>
+      <div class="empty-title">Every answer is provable</div>
+      <div class="empty-sub">
+        This chatbot routes every message through OpenGradient's TEE-verified LLM network.
+        Each response comes with a cryptographic transaction hash — on-chain proof of exactly
+        which model produced it.
+      </div>
+      <div class="starter-grid">
+        <button class="starter-btn" onclick="sendStarter(this)">
+          <div class="starter-label">DeFi</div>
+          What is the risk of liquidation in DeFi lending protocols?
+        </button>
+        <button class="starter-btn" onclick="sendStarter(this)">
+          <div class="starter-label">Blockchain</div>
+          Explain how OpenGradient makes AI verifiable on-chain.
+        </button>
+        <button class="starter-btn" onclick="sendStarter(this)">
+          <div class="starter-label">Security</div>
+          What are the signs of a crypto wallet being compromised?
+        </button>
+        <button class="starter-btn" onclick="sendStarter(this)">
+          <div class="starter-label">Web3</div>
+          How do TEE (Trusted Execution Environments) work?
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages" id="messages" style="display:none"></div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea
+          class="msg-textarea" id="msgInput" rows="1"
+          placeholder="Ask anything — your response will be cryptographically verified..."
+        ></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-footer">
+        <div class="input-footer-text">
+          <div class="verified-dot"></div>
+          Responses verified via TEE · Settled on OpenGradient Network · Powered by x402
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let messages      = [];
+let proofCount    = 0;
+let isLoading     = false;
+
+// ── Auto-resize textarea ──────────────────────────────────────
+const textarea = document.getElementById("msgInput");
+textarea.addEventListener("input", () => {
+  textarea.style.height = "auto";
+  textarea.style.height = Math.min(textarea.scrollHeight, 160) + "px";
+});
+textarea.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// ── New chat ──────────────────────────────────────────────────
+function newChat() {
+  messages = [];
+  document.getElementById("messages").innerHTML = "";
+  document.getElementById("messages").style.display = "none";
+  document.getElementById("emptyState").style.display = "flex";
+}
+
+// ── Send starter ──────────────────────────────────────────────
+function sendStarter(btn) {
+  const text = btn.querySelector("div:last-child").textContent.trim() ||
+               btn.textContent.replace(btn.querySelector(".starter-label").textContent, "").trim();
+  document.getElementById("msgInput").value = text;
+  sendMessage();
+}
+
+// ── Render message ────────────────────────────────────────────
+function renderMessage(role, content, meta = null) {
+  const container = document.getElementById("messages");
+  container.style.display = "flex";
+  document.getElementById("emptyState").style.display = "none";
+
+  const div = document.createElement("div");
+  div.className = `message ${role}`;
+
+  const avatarText = role === "user" ? "you" : "OG";
+  const avatarClass= role === "user" ? "user" : "ai";
+
+  let proofHTML = "";
+  if (role === "ai" && meta) {
+    const hashShort = meta.txHash
+      ? meta.txHash.slice(0,8) + "..." + meta.txHash.slice(-6)
+      : null;
+    const modelShort = (meta.model || "").split("/").pop();
+
+    proofHTML = `
+      <div class="proof-tag">
+        <div class="proof-chip tee">✓ TEE VERIFIED</div>
+        <div class="proof-chip model">${modelShort}</div>
+        ${meta.txHash ? `
+        <div class="proof-chip hash"
+             onclick="window.open('https://explorer.opengradient.ai/tx/${meta.txHash}','_blank')"
+             title="View proof on OpenGradient Explorer">
+          🔗 ${hashShort}
+        </div>` : ""}
+        ${meta.tokens ? `<div class="proof-chip tokens">${meta.tokens.total_tokens} tokens</div>` : ""}
+      </div>
+    `;
+  }
+
+  div.innerHTML = `
+    <div class="msg-avatar ${avatarClass}">${avatarText}</div>
+    <div class="msg-body">
+      <div class="msg-bubble">${escapeHtml(content)}</div>
+      ${proofHTML}
+    </div>
+  `;
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/\n/g,"<br>");
+}
+
+// ── Typing indicator ──────────────────────────────────────────
+function showTyping() {
+  const container = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className = "message ai"; div.id = "typingMsg";
+  div.innerHTML = `
+    <div class="msg-avatar ai">OG</div>
+    <div class="msg-body">
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById("typingMsg");
+  if (el) el.remove();
+}
+
+// ── Add to proof log ──────────────────────────────────────────
+function addToProofLog(userMsg, aiMsg, meta) {
+  proofCount++;
+  document.getElementById("proofCount").textContent = proofCount;
+
+  const log  = document.getElementById("proofLog");
+  const item = document.createElement("div");
+  item.className = "proof-item";
+
+  const modelShort  = (meta?.model || "").split("/").pop() || "unknown";
+  const hashShort   = meta?.txHash
+    ? meta.txHash.slice(0,6) + "..." + meta.txHash.slice(-4)
+    : "pending";
+
+  item.innerHTML = `
+    <div class="proof-item-model">✓ ${modelShort}</div>
+    <div class="proof-item-preview">${userMsg.slice(0, 80)}</div>
+    <div class="proof-item-hash">tx: ${hashShort}</div>
+  `;
+
+  // Remove placeholder if present
+  if (log.querySelector("div[style]")) {
+    log.querySelector("div[style]").remove();
+  }
+
+  log.insertBefore(item, log.firstChild);
+}
+
+// ── Send message ──────────────────────────────────────────────
+async function sendMessage() {
+  const input   = document.getElementById("msgInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const model   = document.getElementById("modelSelect").value;
+  const text    = input.value.trim();
+
+  if (!text || isLoading) return;
+
+  isLoading = true;
+  input.value = ""; input.style.height = "auto";
+  sendBtn.disabled = true;
+
+  // Add user message to UI and history
+  renderMessage("user", text);
+  messages.push({ role: "user", content: text });
+
+  // Show typing
+  document.getElementById("messages").style.display = "flex";
+  document.getElementById("emptyState").style.display = "none";
+  showTyping();
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: "You are VerifAI, a helpful AI assistant running on OpenGradient's TEE-verified inference network. Every response you give is cryptographically verified and settled on the OpenGradient blockchain. Be helpful, accurate, and mention when relevant that your responses are verifiable on-chain."
+          },
+          ...messages
+        ],
+        model,
+      })
+    });
+
+    hideTyping();
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Request failed: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    const aiContent = data.content || "No response received.";
+
+    // Add to message history
+    messages.push({ role: "assistant", content: aiContent });
+
+    // Render AI message with proof
+    renderMessage("ai", aiContent, {
+      txHash: data.txHash,
+      model:  data.model || model,
+      tokens: data.tokens,
+    });
+
+    // Add to proof log
+    addToProofLog(text, aiContent, {
+      txHash: data.txHash,
+      model:  data.model || model,
+    });
+
+  } catch(err) {
+    hideTyping();
+    renderMessage("ai",
+      `⚠️ ${err.message}\n\nNote: Make sure the server has OG_PRIVATE_KEY and OG_WALLET_ADDR configured in Vercel environment variables, and your wallet has $OPG testnet tokens from https://faucet.opengradient.ai`,
+      null
+    );
+  } finally {
+    isLoading = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+</script>
+</body>
+</html>
